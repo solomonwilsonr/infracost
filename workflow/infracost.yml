@@ -1,0 +1,41 @@
+on:
+  pull_request:
+    types: [opened, synchronize, closed]
+  push:
+    branches:
+      - main
+      - master
+
+env:
+  SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+
+jobs:
+  infracost:
+    name: Infracost
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Infracost
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Generate cost diff
+        run: |
+          infracost breakdown --path=. --format=json --out-file=/tmp/base.json
+          infracost diff --path=. --format=json --compare-to=/tmp/base.json --out-file=/tmp/diff.json
+
+      - name: Comment on PR
+        run: |
+          infracost comment github \
+            --path=/tmp/diff.json \
+            --repo=$GITHUB_REPOSITORY \
+            --github-token=${{ github.token }} \
+            --pull-request=${{ github.event.pull_request.number }} \
+            --behavior=update
