@@ -8,7 +8,7 @@ resource "aws_key_pair" "my_key" {
 }
 
 resource "aws_security_group" "ec2_sg" {
-  name        = "allow_ssh"
+  name        = "allow_ssh_1"
   description = "Allow SSH inbound traffic"
 
   ingress {
